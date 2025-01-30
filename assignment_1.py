@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pdb
 import xarray as xr
 
-dset = xr.open_dataset(r'c:\Users\10739\Downloads\N21E039.SRTMGL1_NC.nc')
+dset = xr.open_dataset(r'/mnt/storage1/maj0d/projects/data/N21E039.SRTMGL1_NC.nc')
 DEM=np.array(dset.variables['SRTMGL1_DEM'])
 plt.imshow(DEM)
 cbar = plt.colorbar()
