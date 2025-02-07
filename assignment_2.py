@@ -7,6 +7,7 @@ from scipy import stats
 
 #  Part 2: Exploring the Data
 dir_path = "/mnt/storage1/maj0d/projects/data/ErSE316/assignment_2"
+figures_dir = "/mnt/storage1/maj0d/projects/geo_env/figures/assignment_2"
 fnames = os.listdir(dir_path)
 for fname in fnames:
     print("the name of the netCDF file is:", fname)
@@ -58,7 +59,9 @@ for scenario in scenarios:
     cbar.set_label('Temperature (K)')
     time_range = f"2071-2100"
     plt.title(f'{scenario} {time_range} Mean Air Temperature')
-    plt.savefig(f'{scenario}_{time_range}_mean_temperature.png')
+    fig_name = f'{scenario}_{time_range}_mean_temperature.png'
+    fig_path = os.path.join(figures_dir, fig_name)
+    plt.savefig(fig_path,dpi=300)
     plt.clf()
     # Calculate the difference between the mean air temperature map for 2071-2100 and 1850-1900
     diff = mean_2071_2100 - mean_1850_1900
@@ -67,7 +70,9 @@ for scenario in scenarios:
     cbar.set_label('Temperature (K)')
     time_range = f"2071-2100"
     plt.title(f'{scenario} Mean Air Temperature Difference\nbetween {time_range} and 1850-1900')
-    plt.savefig(f'{scenario}_{time_range}_mean_temperature_diff.png')
+    fig_name = f'{scenario}_{time_range}_mean_temperature_diff.png'
+    fig_path = os.path.join(figures_dir, fig_name)
+    plt.savefig(fig_path,dpi=300)
     plt.clf()
     # Calculate air temperature trend
     # decade_mean = air_temperature.mean(dim='lon').mean(dim='lat').resample(time='10YE').mean()
@@ -94,7 +99,9 @@ plt.xlabel('Year')
 plt.ylabel('Temperature (K)')
 plt.title('Annual Mean Air Temperature')
 plt.legend()
-plt.savefig('annual_mean_temperature.png')
+fig_name = 'annual_mean_temperature.png'
+fig_path = os.path.join(figures_dir, fig_name)
+plt.savefig(fig_path,dpi=300)
     
     
     
