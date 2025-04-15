@@ -5,6 +5,8 @@ import geopandas as gpd
 from scipy.stats import norm
 from collections import namedtuple
 import matplotlib.pyplot as plt
+import sys
+
 # Path to your directory
 root_dir = r'/mnt/storage1/maj0d/data/ErSE316/assignment_9/'
 
@@ -98,87 +100,91 @@ def calculate_wet_bulb_temperature(temp_k, rh_percent):
     wbt_k = wbt_c + 273.15
     return wbt_k
 
+def clip_to_saudi_arabia(ds,shapefile_path):
+    """
+    Clip the dataset to the boundaries of Saudi Arabia using a shapefile.
+    Args:
+        ds: xarray dataset
+        shapefile_path: Path to the shapefile of Saudi Arabia
+    Returns:
+        Clipped dataset
+    """
+    gdf = gpd.read_file(shapefile_path)
+    ds = ds.rio.write_crs("EPSG:4326")
+    clipped_ds = ds.rio.clip(gdf.geometry, gdf.crs, drop=True)
+    return clipped_ds
 
-def main():
-    fig_dir = r'/mnt/storage1/maj0d/projects/geo_env/figures/assignment_9/'
+
+def main(fig_dir):
     if not os.path.exists(fig_dir):
         os.makedirs(fig_dir)
     # Part 1: Load the datasets and plot annual averages
+    ds_map = {}
+    varname_map = {
+        'Temperature': 'tas',
+        'Humidity': 'hurs',
+        'Precipitation': 'pr'
+    }
+    units_map = {
+        'Temperature': 'K',
+        'Humidity': '%',
+        'Precipitation': 'mm'
+    }
+    # Load the datasets
+    for v in variables:
+        for s in senerios:
+            tmp_file = os.path.join(root_dir, f'{v}{s}.nc')
+            ds = xr.open_dataset(tmp_file).sortby('time')
+            ds_map[f'{v}{s}'] = ds.mean(dim=['lat', 'lon'])
+    
+    # Plot annual average
+    for v in variables:
+        for s in senerios:
+            annual_average = ds_map[f'{v}{s}'][varname_map[v]].groupby('time.year').mean(dim='time')
+            annual_average.plot(label=f'SSP{s}')
+        plt.title(f"Annual Average {v}")
+        plt.xlabel('Year')
+        plt.ylabel(f'{v} ({units_map[v]})')
+        plt.legend()
+        plt.grid()
+        plt.savefig(os.path.join(fig_dir, f'annual_avg_{v}.png'))
+        plt.close()
+    
+    # Part 2: Climate change Trend Analysis
+    for v in variables:
+        for s in senerios:
+            annual_average = ds_map[f'{v}{s}'][varname_map[v]].groupby('time.year').mean(dim='time')
+            adjusted_mk_test = hamed_rao_mk_test(annual_average.values, alpha=0.05)
+            print(f"Modified MK test for annual average {v} {s}: {adjusted_mk_test}")
+            sens_slope_value = sens_slope(
+                annual_average['year'], annual_average.values)
+            print(f"Sen's slope for annual average {v} {s}: {sens_slope_value}")
+    
+    # Part 3: Analysis of Climate Extremes
+    for v in variables:
+        for s in senerios:
+            annual_max = ds_map[f'{v}{s}'][varname_map[v]].resample(time='YE').max()
+            annual_max.plot(label=f'SSP{s}')
+            plt.title(f"Annual Maximum {v}")
+            plt.xlabel('Date')
+            plt.ylabel(f'{v} ({units_map[v]})')
+        plt.legend()
+        plt.grid()
+        plt.savefig(os.path.join(fig_dir, f'annual_max_{v}.png'))
+        plt.close()
+    
+    # Part 4: Wet Bulb Temperature Calculation
     for s in senerios:
-        # Load the datasets
-        temp_file = os.path.join(root_dir, f'Temperature{s}.nc')
-        rh_file = os.path.join(root_dir, f'Humidity{s}.nc')
-        prcp_file = os.path.join(root_dir, f'Precipitation{s}.nc')
-        ds_temp = xr.open_dataset(temp_file).sortby('time').mean(dim=['lat', 'lon'])
-        ds_rh = xr.open_dataset(rh_file).sortby('time').mean(dim=['lat', 'lon'])
-        ds_prcp = xr.open_dataset(prcp_file).sortby('time').mean(dim=['lat', 'lon'])
-        # Plot annual average
-        annual_average_temp = ds_temp['tas'].groupby('time.year').mean(dim='time')
-        annual_average_temp.plot()
-        plt.title(f"Annual Average Temperature {s}")
-        plt.xlabel('Year')
-        plt.ylabel('Temperature (K)')
-        plt.savefig(os.path.join(fig_dir, f'annual_avg_temp_{s}.png'))
-        plt.close()
-        annual_average_rh = ds_rh['hurs'].groupby('time.year').mean(dim='time')
-        annual_average_rh.plot()
-        plt.title(f"Annual Average Relative Humidity {s}")
-        plt.xlabel('Year')
-        plt.ylabel('Relative Humidity (%)')
-        plt.savefig(os.path.join(fig_dir, f'annual_avg_rh_{s}.png'))
-        plt.close()
-        annual_average_prcp = ds_prcp['pr'].groupby('time.year').mean(dim='time')
-        annual_average_prcp.plot()
-        plt.title(f"Annual Average Precipitation {s}")
-        plt.xlabel('Year')
-        plt.ylabel('Precipitation (mm)')
-        plt.savefig(os.path.join(fig_dir, f'annual_avg_prcp_{s}.png'))
-        plt.close()
-        # Trend analysis
-        # Modified Mann-Kendall test
-        adjusted_mk_test = hamed_rao_mk_test(
-            annual_average_temp.values, alpha=0.05)
-        print(f"Modified MK test for temperature {s}: {adjusted_mk_test}")
-        adjusted_mk_test = hamed_rao_mk_test(
-            annual_average_prcp.values, alpha=0.05)
-        print(f"Modified MK test for precipitation {s}: {adjusted_mk_test}")
-        sens_slope_temp = sens_slope(
-            annual_average_temp['year'], annual_average_temp.values)
-        print(f"Sen's slope for temperature {s}: {sens_slope_temp}")
-        sens_slop_prcp = sens_slope(
-            annual_average_prcp['year'], annual_average_prcp.values)
-        print(f"Sen's slope for precipitation {s}: {sens_slop_prcp}")
-        # Analysis of Climate Extremes
-        # Take the annual average of all the grids for Saudi at daily steps
-        annual_max_temp_data = ds_temp['tas'].resample(time='YE').max()
-        annual_max_temp_data.plot()
-        plt.title(f"Annual Maximum Temperature {s}")
-        plt.xlabel('Date')
-        plt.ylabel('Temperature (K)')
-        plt.savefig(os.path.join(fig_dir, f'annual_max_temp_{s}.png'))
-        plt.close()
-        prcp_data = ds_prcp['pr'].resample(time='YE').max()
-        prcp_data.plot()
-        plt.title(f"Annual Maximum Precipitation {s}")
-        plt.xlabel('Date')
-        plt.ylabel('Precipitation (mm)')
-        plt.savefig(os.path.join(fig_dir, f'annual_max_prcp_{s}.png'))
-        plt.close()
-        adjusted_mk_test = hamed_rao_mk_test(
-            annual_max_temp_data.values, alpha=0.05)
-        print(f"Modified MK test for annual max temperature {s}: {adjusted_mk_test}")
-        adjusted_mk_test = hamed_rao_mk_test(
-            prcp_data.values, alpha=0.05)
-        print(f"Modified MK test for annual max precipitation {s}: {adjusted_mk_test}")
-        # Output directory and file
-        output_dir = root_dir
-        output_file = os.path.join(output_dir, f"wb_{s}.nc")
+        ds_temp = ds_map[f'Temperature{s}']
+        ds_rh = ds_map[f'Humidity{s}']
+        # Calculate wet bulb temperature
+        output_file = os.path.join(root_dir, f"wb_{s}.nc")
         if os.path.exists(output_file):
             print(f"File {output_file} already exists, skipping...")
             wbt_k_ds = xr.open_dataset(output_file)
         else:
             # Create output directory if it doesn't exist
-            os.makedirs(output_dir, exist_ok=True)
+            os.makedirs(root_dir, exist_ok=True)
             # Extract temperature and humidity data
             temp_k = ds_temp['tas']  # Assuming 'tas' is temperature variable
             rh_percent = ds_rh['hurs']  # Assuming 'hurs' is relative humidity
@@ -207,32 +213,34 @@ def main():
         ds_temp.close()
         ds_rh.close()
         # clip data to Saudi Arabia
-        shapefile_path = '/mnt/storage1/maj0d/data/ErSE316/assignment_8/WS_3/WS_3.shp'
-        gdf = gpd.read_file(shapefile_path)
-        wbt_k_ds = wbt_k_ds.rio.write_crs("EPSG:4326")
-        clipped_wbt_k = wbt_k_ds.rio.clip(gdf.geometry, gdf.crs, drop=True)['wet_bulb_temp']
+        clipped_wbt_k = clip_to_saudi_arabia(wbt_k_ds, '/mnt/storage1/maj0d/data/ErSE316/assignment_8/WS_3/WS_3.shp')['wet_bulb_temp']
         clipped_wbt_k = clipped_wbt_k.mean(dim=['lat', 'lon'])
         annual_average_wbt_k = clipped_wbt_k.resample(time='YE').mean()
-        annual_average_wbt_k.plot()
-        plt.title(f"Annual Average Wet Bulb Temperature {s}")
-        plt.xlabel('Year')
-        plt.ylabel('Wet Bulb Temperature (K)')
-        plt.savefig(os.path.join(fig_dir, f'annual_avg_wbt_{s}.png'))
-        plt.close()
-        # Trend analysis for wet bulb temperature
+        annual_average_wbt_k.plot(label=f'SSP{s}')
+    plt.title(f"Annual Average Wet Bulb Temperature {s}")
+    plt.xlabel('Year')
+    plt.ylabel('Wet Bulb Temperature (K)')
+    plt.legend()
+    plt.grid()
+    plt.savefig(os.path.join(fig_dir, f'annual_avg_wbt.png'))
+    plt.close()
+
+    # Part 5: Wet Bulb Temperature Trend Analysis & Extremes
+    for s in senerios:
+        wbt_k_ds = xr.open_dataset(os.path.join(root_dir, f"wb_{s}.nc"))
+        clipped_wbt_k = clip_to_saudi_arabia(
+            wbt_k_ds, '/mnt/storage1/maj0d/data/ErSE316/assignment_8/WS_3/WS_3.shp')['wet_bulb_temp']
+        clipped_wbt_k = clipped_wbt_k.mean(dim=['lat', 'lon'])
+        annual_average_wbt_k = clipped_wbt_k.resample(time='YE').mean()
         adjusted_mk_test = hamed_rao_mk_test(
             annual_average_wbt_k.values, alpha=0.05)
         print(f"Modified MK test for wet bulb temperature {s}: {adjusted_mk_test}")
         sens_slope_wbt = sens_slope(
             annual_average_wbt_k['time.year'].values, annual_average_wbt_k.values)
         print(f"Sen's slope for wet bulb temperature {s}: {sens_slope_wbt}")
+
         annual_max_wbt_k = clipped_wbt_k.resample(time='YE').max()
-        annual_max_wbt_k.plot()
-        plt.title(f"Annual Maximum Wet Bulb Temperature {s}")
-        plt.xlabel('Date')
-        plt.ylabel('Wet Bulb Temperature (K)')
-        plt.savefig(os.path.join(fig_dir, f'annual_max_wbt_{s}.png'))
-        plt.close()
+        annual_max_wbt_k.plot(label=f'SSP{s}')
         adjusted_mk_test = hamed_rao_mk_test(
             annual_max_wbt_k.values, alpha=0.05)
         print(f"Modified MK test for annual max wet bulb temperature {s}: {adjusted_mk_test}")
@@ -240,6 +248,18 @@ def main():
             annual_max_wbt_k['time.year'].values, annual_max_wbt_k.values)
         print(f"Sen's slope for annual max wet bulb temperature {s}: {sens_slope_wbt}")
         wbt_k_ds.close()
+    plt.title(f"Annual Maximum Wet Bulb Temperature")
+    plt.xlabel('Date')
+    plt.ylabel('Wet Bulb Temperature (K)')
+    plt.legend()
+    plt.grid()
+    plt.savefig(os.path.join(fig_dir, f'annual_max_wbt.png'))
+    plt.close()
+
 
 if __name__ == "__main__":
-    main()
+    fig_dir = r'/mnt/storage1/maj0d/projects/geo_env/figures/assignment_9/'
+    original_stdout = sys.stdout
+    with open(os.path.join(fig_dir,'output.txt'), 'w') as f:
+        sys.stdout = f
+        main(fig_dir)
