@@ -1,0 +1,22 @@
+Modified MK test for Humidity 126: Trend(trend='decreasing', h=np.True_, p=np.float64(0.0151207904256625), z=np.float64(-2.4294730164311042), s=np.float32(-509.0))
+Sen's slope for Humidity 126: -0.012865324278135557
+Modified MK test for Humidity 370: Trend(trend='decreasing', h=np.True_, p=np.float64(0.03849566252382619), z=np.float64(-2.0695376451573635), s=np.float32(-451.0))
+Sen's slope for Humidity 370: -0.010823313395182292
+Modified MK test for Temperature 126: Trend(trend='increasing', h=np.True_, p=np.float64(0.0), z=np.float64(10.445550756348004), s=np.float32(901.0))
+Sen's slope for Temperature 126: 0.004427787585136218
+Modified MK test for Temperature 370: Trend(trend='increasing', h=np.True_, p=np.float64(0.0), z=np.float64(69.42598705956568), s=np.float32(3187.0))
+Sen's slope for Temperature 370: 0.043712615966796875
+Modified MK test for Precipitation 126: Trend(trend='decreasing', h=np.False_, p=np.float64(0.5293153910466262), z=np.float64(-0.6290514233166142), s=np.float32(-221.0))
+Sen's slope for Precipitation 126: -3.512695911922492e-09
+Modified MK test for Precipitation 370: Trend(trend='decreasing', h=np.False_, p=np.float64(0.5462473918597588), z=np.float64(-0.6033928285869639), s=np.float32(-183.0))
+Sen's slope for Precipitation 370: -3.4614565854152556e-09
+File /mnt/storage1/maj0d/data/ErSE316/assignment_9/wb_126.nc already exists, skipping...
+File /mnt/storage1/maj0d/data/ErSE316/assignment_9/wb_370.nc already exists, skipping...
+Modified MK test for wet bulb temperature 126: Trend(trend='increasing', h=np.True_, p=np.float64(8.881784197001252e-16), z=np.float64(8.041882812341221), s=np.float32(783.0))
+Sen's slope for wet bulb temperature 126: 0.0032429597815688774
+Modified MK test for annual max wet bulb temperature 126: Trend(trend='increasing', h=np.True_, p=np.float64(2.385207586996785e-10), z=np.float64(6.33423559383662), s=np.float32(825.0))
+Sen's slope for annual max wet bulb temperature 126: 0.004490064538043478
+Modified MK test for wet bulb temperature 370: Trend(trend='increasing', h=np.True_, p=np.float64(0.0), z=np.float64(64.3441145412626), s=np.float32(3031.0))
+Sen's slope for wet bulb temperature 370: 0.03470916748046875
+Modified MK test for annual max wet bulb temperature 370: Trend(trend='increasing', h=np.True_, p=np.float64(0.0), z=np.float64(52.147903800975236), s=np.float32(2633.0))
+Sen's slope for annual max wet bulb temperature 370: 0.028656604243259803
